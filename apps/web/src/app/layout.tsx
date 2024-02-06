@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  name: "Discron - Calendar",
+  title: "Discron - Calendar",
   description: "Sync your Discord server calendar and easily share it!"
 };
 
