@@ -1,0 +1,14 @@
+{
+  "name": "@discron/discord",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "discord-api-types": "^0.37.67"
+  },
+  "dependencies": {
+    "@sapphire/decorators": "latest",
+    "@sapphire/framework": "^5.0.7",
+    "discord.js": "^14.14.1"
+  }
+}
