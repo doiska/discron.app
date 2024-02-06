@@ -1,6 +1,17 @@
 import { integer, jsonb, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
 
-export const scheduledEvents = pgTable("scheduledEvents", {
+export const guilds = pgTable("guilds", {
+    id: varchar("id")
+        .notNull()
+        .primaryKey(),
+    name: varchar("name").notNull(),
+    icon: varchar("icon"),
+    banner: varchar("banner"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow()
+})
+
+export const scheduledEvents = pgTable("scheduled_events", {
     id: varchar("id")
         .notNull()
         .primaryKey(),

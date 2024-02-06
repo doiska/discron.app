@@ -1,29 +1,27 @@
-import {type GuildScheduledEvent, GuildScheduledEventPrivacyLevel, GuildScheduledEventStatus} from "discord.js";
+import { type GuildScheduledEvent, GuildScheduledEventPrivacyLevel, GuildScheduledEventStatus } from "discord.js";
 
 export function getEventCreator(event: GuildScheduledEvent) {
-    if(event.creator) {
+    if (event.creator) {
         return {
             id: event.creator.id,
-            name: event.creator.globalName,
-            avatar: event.creator.avatarURL(),
+            name: event.creator.displayName,
+            image: event.creator.avatarURL(),
             type: "user"
         }
     }
 
-    if(event.guild) {
+    if (event.guild) {
         return {
             id: event.guild.id,
             name: event.guild.name,
-            avatar: event.guild.iconURL(),
+            image: event.guild.iconURL(),
             type: "guild"
         }
     }
-
-    return null;
 }
 
 export function getPrivacyLevel(event: GuildScheduledEvent) {
-    if(event.privacyLevel === GuildScheduledEventPrivacyLevel.GuildOnly) {
+    if (event.privacyLevel === GuildScheduledEventPrivacyLevel.GuildOnly) {
         return "guild-only";
     }
 
@@ -43,23 +41,46 @@ export function getStatus(event: GuildScheduledEvent) {
 
 
 export function parseScheduledEvent(event: GuildScheduledEvent) {
+    const location = (() => {
+        if (event.entityMetadata?.location) {
+            return {
+                id: event.entityMetadata?.location,
+                name: event.entityMetadata?.location,
+                type: "raw",
+            }
+        }
+
+        if (event.channel) {
+            return {
+                id: event.channel.id,
+                name: event.channel.name,
+                type: "channel",
+            }
+        }
+
+        return null;
+    })();
+
     return {
         id: event.id,
         name: event.name,
         description: event.description,
-        url: event.url,
+        url: null,
         access: getPrivacyLevel(event) === "public",
         status: getStatus(event),
-        channel: event.channel,
         creator: getEventCreator(event),
+        image: event.coverImageURL({
+            size: 4096,
+        }),
+        location: location,
         subscribers: {
             count: event.userCount,
             subscribers: null,
         },
-        image: event.image,
-        location: event.entityMetadata?.location,
+        startsAt: event.scheduledStartAt,
+        endsAt: event.scheduledEndAt,
         createdAt: event.createdAt,
-    }
+    } as const;
 }
 
 export async function getEventSubscribers(event: GuildScheduledEvent) {
