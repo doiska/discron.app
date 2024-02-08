@@ -6,26 +6,27 @@ import {
     DropdownMenuLabel, DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { LucideExternalLink } from "lucide-react";
+import { Copy, LucideExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScheduledEvent, ServerInfo } from "@/types";
+import type { ServerGuild, ScheduledEvent } from "@discron/shared";
+import { FaSquareXTwitter } from "react-icons/fa6";
 
 interface ShareProps {
-    server: ServerInfo;
+    server: ServerGuild;
     event: ScheduledEvent
 }
 
 export function Share({ server, event }: ShareProps) {
 
     const shareOnTwitter = () => {
-        const tweet = `Join me on ${server.name} for ${event.name} ${server.invite}`;
+        const tweet = `Join me on ${server.name} for ${event.name} ${server.shortUrl}`;
         window.open(`https://twitter.com/intent/tweet?text=${tweet}`);
     }
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild={true}>
-                <Button variant="default" className="gap-4">
+                <Button variant="secondary" className="gap-4">
                     <LucideExternalLink />
                     Share
                 </Button>
@@ -33,8 +34,14 @@ export function Share({ server, event }: ShareProps) {
             <DropdownMenuContent>
                 <DropdownMenuLabel>Share on</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={shareOnTwitter}>X (Twitter)</DropdownMenuItem>
-                <DropdownMenuItem>Copy</DropdownMenuItem>
+                <DropdownMenuItem onClick={shareOnTwitter}>
+                    <FaSquareXTwitter className="w-6 h-6 mr-2" />
+                    Twitter
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                    <Copy className="w-6 h-6 mr-2 " />
+                    Copy
+                </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
     )

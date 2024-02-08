@@ -5,6 +5,10 @@
   "workspaces": [
     "apps/*"
   ],
+  "scripts": {
+    "web": "cd apps/web && bun dev",
+    "app": "cd apps/discord && bun dev"
+  },
   "devDependencies": {
     "drizzle-kit": "^0.20.13"
   },
@@ -17,6 +21,7 @@
     "drizzle-orm": "^0.29.3",
     "framer-motion": "^11.0.3",
     "postgres": "^3.4.3",
+    "react-icons": "^5.0.1",
     "zod": "^3.22.4"
   }
 }

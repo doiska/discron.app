@@ -1,65 +1,56 @@
 import { CalendarItem } from "@/components/calendar/calendar-item";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Background } from "@/components/background";
+import { kil } from "@/lib/db";
+import { scheduledEvents, guilds } from "@discron/shared";
+import { eq, or } from "drizzle-orm";
+import { Metadata } from "next";
 
-const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-];
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+    const [serverInfo] = await kil.select().from(guilds).where(or(eq(guilds.id, params.id), eq(guilds.shortUrl, params.id)));
 
-const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-const mockEvents = [
-    {
-        id: "1",
-        name: "Basement Meeting",
-        description: "Reunião semanal para discutir o progresso do projeto.",
-        startAt: new Date(),
-        endAt: new Date(new Date().setHours(new Date().getHours() + 1)),
-        location: "Discord - Meeting Stage",
-        creator: "daniel reis"
-    },
-    {
-        id: "2",
-        name: "Game Night",
-        description: "Vamos jogar Among Us!",
-        startAt: new Date(new Date().setDate(new Date().getDate() + 1)),
-        endAt: new Date(new Date().setDate(new Date().getDate() + 1)),
-        location: "Discord",
-        creator: "Event Creator",
-    },
-    {
-        id: "3",
-        name: "Conversa com o CEO",
-        description: "Conversa com o CEO sobre o futuro da empresa.",
-        startAt: new Date(new Date().setDate(new Date().getDate() - 3)),
-        location: "Discord",
-        creator: "Event Creator",
+    if (!serverInfo) {
+        console.error("Server not found");
+        return {
+            title: "Discron",
+            description: "Discron is a Discord bot that helps you share your server events.",
+        }
     }
-]
 
-const NAME = "Basement Devs";
-const ICON = "https://cdn.discordapp.com/icons/694267688272396288/9978523b1197d3628ec64f0d9a3b6416.webp?size=512"
-const BACKGROUND = "https://cdn.discordapp.com/splashes/452926217558163456/95459967dc65198f9105893d9f361808.jpg?size=2048"
-const INVITE_LINK = "https://discord.gg/cw5kWWnx"
+    return {
+        title: `Discron | ${serverInfo.name}`,
+        description: `Upcoming events in ${serverInfo.name}`,
+        openGraph: {
+            images: [serverInfo.icon!]
+        },
+        twitter: {
 
-export default function GuildPage() {
+        }
+    }
+}
+
+export default async function GuildPage(
+    { params }: { params: { id: string } }
+) {
+
+    if (!params?.id) {
+        console.error("No server id provided");
+        return null;
+    }
+
+    const [serverInfo] = await kil.select().from(guilds).where(or(eq(guilds.id, params.id), eq(guilds.shortUrl, params.id)));
+    const events = await kil.select().from(scheduledEvents).where(eq(scheduledEvents.guildId, serverInfo.id));
+
+    if (!serverInfo) {
+        console.error("Server not found");
+        return;
+    }
+
     return (
         <main
             className={cn(
-                "relative flex flex-col justify-center items-center min-h-screen w-full overflow-hidden",
+                "relative flex flex-col justify-center items-center min-h-screen w-full overflow-hidden gap-6 p-8",
             )}
         >
             <Background />
@@ -69,48 +60,36 @@ export default function GuildPage() {
             >
                 Discron
             </Button>
-            <div className="flex flex-col items-center justify-center space-y-6">
-                <img
-                    src={ICON}
-                    alt="Basement Devs"
-                    className="w-64 h-64 rounded-full"
-                >
-                </img>
-
+            <div className="flex flex-col items-center justify-center gap-6">
+                {
+                    serverInfo.icon && (
+                        <img
+                            src={serverInfo.icon}
+                            alt={serverInfo.name}
+                            className="h-64 rounded-full"
+                        >
+                        </img>
+                    )
+                }
                 <Button
-                    asChild={true}
                     variant="ghost"
-                    className="text-4xl font-bold text-center break-words text-pretty text-accent"
+                    className="text-4xl font-bold break-words text-pretty text-accent"
                 >
-                    <Link href={INVITE_LINK}>
-                        {NAME}
-                    </Link>
+                    Upcoming Events in {serverInfo.name}
                 </Button>
-                <div className="flex items-center justify-center w-full">
-                    <Button
-                        className="w-full"
-                        variant="outline"
-                    >
-                        Join Server
-                    </Button>
-                </div>
             </div>
-
-            <div className="flex flex-col items-center justify-center space-y-6 mt-6 w-full">
-                <h2 className="text-2xl font-bold text-white">Upcoming Events</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {mockEvents.map((event) => (
-                        <CalendarItem
-                            key={event.id}
-                            event={event}
-                            server={{
-                                name: NAME,
-                                id: "1",
-                                invite: INVITE_LINK,
-                            }}
-                        />
-                    ))}
-                </div>
+            <div className="relative grid grid-cols-1 gap-6 p-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent h-px w-3/4" />
+                <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent h-[2px] w-3/4 blur-sm" />
+                <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-sky-500 to-transparent h-[5px] w-2/4 blur-sm" />
+                <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent h-px w-3/4" />
+                {events.map((event) => (
+                    <CalendarItem
+                        key={event.id}
+                        event={event}
+                        server={serverInfo}
+                    />
+                ))}
             </div>
         </main>
     );

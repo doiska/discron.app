@@ -3,7 +3,7 @@ import { ApplyOptions } from "@sapphire/decorators";
 import type { Client } from "discord.js";
 import { parseScheduledEvent } from "../helpers/parse-scheduled-event.ts";
 import { kil } from "../database/kil.ts";
-import { scheduledEvents } from "@discron/shared"
+import { scheduledEvents, guilds as guildsSchema } from "@discron/shared"
 import { sql } from "drizzle-orm";
 
 @ApplyOptions<Listener.Options>({
@@ -12,14 +12,29 @@ import { sql } from "drizzle-orm";
 })
 export class ReadyEvent extends Listener<typeof Events.ClientReady> {
     public async run(client: Client) {
-
         console.log("Locked and loaded!");
 
-        // fetch all guilds
         const guilds = client.guilds.cache;
 
-        // loop through each guild
         for (const guild of guilds.values()) {
+            await kil.insert(guildsSchema)
+                .values({
+                    id: guild.id,
+                    name: guild.name,
+                    banner: guild.bannerURL({ extension: "webp", size: 2048 }),
+                    icon: guild.iconURL({ extension: "webp", size: 2048 }),
+                    splash: guild.splashURL({ extension: "webp", size: 2048 }),
+                })
+                .onConflictDoUpdate({
+                    set: {
+                        name: sql.raw("excluded.name"),
+                        icon: sql.raw("excluded.icon"),
+                        banner: sql.raw("excluded.banner"),
+                        splash: sql.raw("excluded.splash"),
+                        updatedAt: sql.raw("now()"),
+                    },
+                    target: [guildsSchema.id],
+                })
 
             const events = await guild.scheduledEvents.fetch();
 
@@ -34,7 +49,7 @@ export class ReadyEvent extends Listener<typeof Events.ClientReady> {
                     }
 
                     const invites = await guild.invites.fetch()
-                        .then(i => i.find(i => i.inviter?.id === client.user?.id));
+                        .then(i => i.find(i => i.inviter?.id === client.user?.id))
 
                     if (invites) {
                         return invites.url;
@@ -42,8 +57,9 @@ export class ReadyEvent extends Listener<typeof Events.ClientReady> {
 
                     return await guild.invites.create(invitableChannelResolvable, {
                         temporary: false
-                    }).then(i => i.url);
-                })();
+                    })
+                        .then(i => i.url)
+                })().catch(() => null);
 
                 return {
                     id: event.id,
@@ -67,24 +83,20 @@ export class ReadyEvent extends Listener<typeof Events.ClientReady> {
 
             await kil.insert(scheduledEvents).values(insertEvents).onConflictDoUpdate({
                 set: {
-                    name: sql`excluded.name`,
-                    description: sql`excluded.description`,
-                    url: sql`excluded.url`,
-                    status: sql`excluded.status`,
-                    image: sql`excluded.image`,
-                    subscribers: sql`excluded.subscribers`,
-                    startsAt: sql`excluded.starts_at`,
-                    endsAt: sql`excluded.ends_at`,
-                    location: sql`excluded.location`,
-                    updatedAt: sql`now()`,
+                    name: sql.raw("excluded.name"),
+                    description: sql.raw("excluded.description"),
+                    url: sql.raw("excluded.url"),
+                    status: sql.raw("excluded.status"),
+                    image: sql.raw("excluded.image"),
+                    subscribers: sql.raw("excluded.subscribers"),
+                    startsAt: sql.raw("excluded.starts_at"),
+                    endsAt: sql.raw("excluded.ends_at"),
+                    location: sql.raw("excluded.location"),
+                    updatedAt: sql.raw("now()"),
                 },
                 target: [scheduledEvents.id],
             });
         }
-
-        const result = await kil.select().from(scheduledEvents);
-
-        console.log(result);
     }
 }
 
